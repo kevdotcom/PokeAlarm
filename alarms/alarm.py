@@ -44,3 +44,6 @@ class Alarm(object):
 	def gym_alert(self, pokegym_info):
 		raise NotImplementedError("This is an abstract method.")	
 		
+	# Trigger an alert based on Captcha notification
+	def captcha_alert(self, captcha_info):
+		raise NotImplementedError("This is an abstract method.")
