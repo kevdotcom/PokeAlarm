@@ -44,6 +44,8 @@ def get_id(data):
 		return data.get('gym_id')
 	elif data['type'] == 'gym-details':
 		return data.get('id')
+	elif data['type'] == 'captcha':
+		return "captcha_{}".format(data.get('account'))
 	else:
 		return None
 	

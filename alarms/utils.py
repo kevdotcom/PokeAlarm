@@ -81,6 +81,12 @@ def set_config(root_path):
 	parser.add_argument('-gf', '--geofence', help='Specify a file of coordinates, limiting alerts to within this area')
 	parser.add_argument('-tl', '--timelimit', type=int, help='Minimum number of seconds remaining on a pokemon to notify', default=0)
 	parser.add_argument('-tz', '--timezone', help='Timezone used for notifications.  Ex: "America/Los_Angeles"')
+	parser.add_argument('--db-host', help='Sets the host for your database.', default='127.0.0.1')
+	parser.add_argument('--db-user', help='Sets the username for your database.')
+	parser.add_argument('--db-pass', help='Sets your database password.')
+	parser.add_argument('--db-name', help='Sets the name of your database.')
+	parser.add_argument('-cc', '--captchacount', help='Mininum amount of Captcha for alerts', default=20)
+
 	
 	args = parser.parse_args()
 	
@@ -91,6 +97,26 @@ def set_config(root_path):
 	config['DEBUG'] = args.debug
 	config['UNITS'] = args.units
 	config['TIME_LIMIT'] = args.timelimit
+	config['DB_HOST'] = args.db_host
+	config['DB_USER'] = args.db_user
+	config['DB_PASS'] = args.db_pass
+	config['DB_NAME'] = args.db_name
+	config['CAPTCHA_COUNT'] = args.captchacount
+
+	if args.db_user is None:
+		parser.print_usage()
+		print(sys.argv[0] + ": error: argument --db-user is required.")
+		sys.exit(1)
+
+	if args.db_pass is None:
+		parser.print_usage()
+		print(sys.argv[0] + ": error: argument --db-pass is required.")
+		sys.exit(1)
+
+	if args.db_name is None:
+		parser.print_usage()
+		print(sys.argv[0] + ": error: argument --db-name is required.")
+		sys.exit(1)
 	
 	if args.key:
 		config['API_KEY'] = key=args.key

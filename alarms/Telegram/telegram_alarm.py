@@ -1,8 +1,11 @@
+# -*- coding: utf-8 -*-
+
 #Setup Logging
 import logging
 log = logging.getLogger(__name__)
 
 #Python modules
+import time
 
 #Local modules
 from ..alarm import Alarm
@@ -11,6 +14,11 @@ from telegram_stickers import stickerlist
 
 #External modules
 import telepot
+import MySQLdb
+
+global last_alert
+
+last_alert = datetime.utcnow() - timedelta(minutes=30)
  
 class Telegram_Alarm(Alarm):
  	
@@ -29,6 +37,13 @@ class Telegram_Alarm(Alarm):
 			#'chat_id': If no default, required
 			'title':"A Team <old_team> gym has fallen!",
 			'body': "It is now controlled by <new_team>."
+		},
+		'captcha': {
+			# 'chat_id': If no default, required
+			'title': 'dummy',
+			'body': "<captcha_counter> Captcha müssen gelöst werden.\n \nKlicke hier um zu helfen:\nhttp://dapogo.de/go/captcha",
+			'body_no_more_captcha': "Alle Captcha gelöst. Vielen Dank! &lt;3",
+			'text_encounter': "Captcha Alarm!"
 		}
 	}
 	
@@ -48,6 +63,7 @@ class Telegram_Alarm(Alarm):
 		self.pokemon = self.set_alert(settings.get('pokemon', {}), self._defaults['pokemon'])
 		self.pokestop = self.set_alert(settings.get('pokestop', {}), self._defaults['pokestop'])
 		self.gym = self.set_alert(settings.get('gym', {}), self._defaults['gym'])
+		self.captcha = self.set_alert(settings.get('captcha', {}), self._defaults['captcha'])
 		
 
 		#Connect and send startup messages
@@ -63,6 +79,9 @@ class Telegram_Alarm(Alarm):
 	#Set the appropriate settings for each alert
 	def set_alert(self, settings, default):
 		alert = {}
+		alert.update(default)
+		alert.update(settings)
+		self.fix_boolean(alert)
 		alert['chat_id'] = settings.get('chat_id', self.chat_id)
 		alert['title'] = settings.get('title', default['title'])
 		alert['body'] = settings.get('body', default['body'])
@@ -71,6 +90,12 @@ class Telegram_Alarm(Alarm):
 		alert['disable_map_notification'] = parse_boolean(settings.get('disable_map_notification', self.disable_map_notification))
 		alert['stickers'] = parse_boolean(settings.get('stickers', self.stickers))
 		return alert
+
+	def fix_boolean(self, alert):
+		for key, value in alert.iteritems():
+			b = parse_boolean(value)
+			if b != None:
+				alert[key] = b
  		
 	#Send Alert to Telegram
  	def send_alert(self, alert, info, sticker_id=None):
@@ -110,6 +135,43 @@ class Telegram_Alarm(Alarm):
   			}
 			try_sending(log, self.connect, "Telegram (Loc)", self.client.sendLocation, args)
 			
+	# Trigger an alert based on Captcha notification
+	def captcha_alert(self, captcha_info):
+		global last_alert
+		
+		if last_alert <= (datetime.utcnow() - timedelta(minutes=20)):
+			# Open database connection
+			db = MySQLdb.connect(args.db_host,args.db_user,args.db_pass,args.db_name )
+
+			# prepare a cursor object using cursor() method
+			cursor = db.cursor()
+
+			# query using execute() method.
+			cursor.execute("SELECT * FROM captcha WHERE token_needed=1")
+
+			captcha_counter = cursor.rowcount
+
+			if captcha_counter > args.captchacount and captcha_info['status'] == 'encounter':
+				# get notification message and return if it is not set
+				text = self.captcha['text_' + captcha_info['status']]
+				if not text:
+					return
+
+				# customize alert, overwrite text, disable location and venue
+				alert = {}
+				alert.update(self.captcha)
+				alert['title'] = text
+				alert['location'] = False
+				alert['venue'] = False
+				if captcha_counter == 0:
+					alert['body'] = self.captcha['body_no_more_captcha']
+
+				# provide global captcha counter
+				captcha_info['captcha_counter'] = captcha_counter
+
+				last_alert = datetime.utcnow()
+
+				self.send_alert(alert, captcha_info)
 			
 	#Trigger an alert based on Pokemon info
 	def pokemon_alert(self, pokemon_info):

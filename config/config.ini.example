@@ -10,4 +10,9 @@
 #locale: 					# Locale for Pokemon names
 #geofence: 					# Specify a file of coordinates, limiting alerts to within this area
 #units: 					# Specify either metric or imperial
-#timelimit: 					# Minimum number of seconds remaining on a pokemon to notify
+#timelimit: 				# Minimum number of seconds remaining on a pokemon to notify
+#db-host:					# MySQL Adress
+#db-user:					# MySQL Username
+#db-pass:					# MySQL Password
+#db-name:					# MySQL Database Name
+#captchacount: 				# Captcha Alert Limit
