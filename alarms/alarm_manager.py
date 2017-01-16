@@ -142,10 +142,7 @@ class Alarm_Manager(Thread):
 					elif data['type'] == 'captcha':
 						log.debug("Request processing for captcha")
 						self.trigger_captcha(data['message'])
-						if captcha_counter >= args.captchacount:
-							log.debug("Finished processing for captcha")
-						else:
-							log.debug('Below alert limit for captcha. Not sending message.')
+						log.debug("Finished processing for captcha")
 					else:
 						log.debug("Invalid type specified: %s" % data['type'])
 				log.debug("Cleaning up 'seen' sets...")
